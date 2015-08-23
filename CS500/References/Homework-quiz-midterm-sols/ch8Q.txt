@@ -1,0 +1,101 @@
+1. Given five memory partitions of 100Kb, 500Kb, 200Kb, 300Kb, 600Kb (in order), how would the first-fit, best-fit, and worst-fit algorithms place 
+   processes of 212 Kb, 417 Kb, 112 Kb, and 426 Kb (in order)? Which algorithm makes the most efficient use of memory?
+
+ First-fit:
+ 212K is put in 500K partition
+ 417K is put in 600K partition
+ 112K is put in 288K partition (new partition 288K = 500K - 212K)
+ 426K must wait
+
+ Best-fit:
+ 212K is put in 300K partition
+ 417K is put in 500K partition
+ 112K is put in 200K partition
+ 426K is put in 600K partition
+
+ Worst-fit:
+ 212K is put in 600K partition
+ 417K is put in 500K partition
+ 112K is put in 388K partition
+ 426K must wait
+
+ In this example, best-fit turns out to be the best.
+
+2. Assuming a 1 KB page size, what are the page numbers and offsets for
+the following address references (provided as decimal numbers):
+a. 2375
+b. 19366
+c. 30000
+d. 256
+e. 16385
+
+Answer:
+a. page = 1; offset = 327
+b. page = 18; offset = 934
+c. page = 29; offset = 304
+d. page = 0; offset = 256
+e. page = 16; offset = 1
+   
+3. Consider  a logical address space of 64 pages of 1024 words each, mapped onto a physical memory of 32 frames.
+
+a. How many bits are there in the logical address?
+b. How many bits are there in the physical address?
+
+
+Answer:
+a. Logical address: 16 bits
+b. Physical address: 15 bits
+
+
+4. Consider a logical address space of 32 pages with 1024 words per page;
+mapped onto a physical memory of 16 frames.
+a. How many bits are required in the logical address?
+b. How many bits are required in the physical address?
+
+Answer:
+a. 2^5  + 2^10  = 15 bits.
+
+b. 2^4  + 2^10  = 14 bits.
+
+
+5. Consider a paging system with the page table stored in memory.
+
+a. If a memory reference takes 200 nanoseconds, how long does a
+paged memory reference take?
+
+b. If we add associative registers, and 75 percent of all page-table references
+are found in the associative registers, what is the effective
+memory reference time? (Assume that finding a page-table entry
+in the associative registers takes zero time if the entry is there.)
+
+
+Answer:
+
+a. 400 nanoseconds: 200 nanoseconds to access the page table and 200
+nanoseconds to access the word in memory.
+
+b. Effective access time = 0.75 × (200 nanoseconds) + 0.25 × (400
+nanoseconds) = 250 nanoseconds.
+
+
+6. Consider the following segment table:
+Segment Base   Length
+0 		219 	600
+1 		2300 	14
+2     	90 		100
+3 		1327 	580
+4 		1952	 96
+What are the physical addresses for the following logical addresses?
+a. 0,430
+b. 1,10
+c. 2,500
+d. 3,400
+e. 4,112
+
+
+Answer:
+a. 219 + 430 = 649
+b. 2300 + 10 = 2310
+c. illegal reference, trap to operating system
+d. 1327 + 400 = 1727
+e. illegal reference, trap to operating system

@@ -1,0 +1,1 @@
+{"lang": "english", "__module__": "bow", "stemming": 1, "_bow": {}, "numdocs": 0, "__class__": "DefaultDocument"}

@@ -1,0 +1,383 @@
+
+<!-- saved from url=(0055)http://www.cs.rpi.edu/~moorthy/Courses/os00/soln78.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title> Solution to worksheet 7 and 8  </title>
+</head><body bgcolor="white" data-feedly-mini="yes">
+<h1>Work Sheet 7 Solution</h1>
+
+<p>    1.(Tiffany)What is a monitor?
+</p><p>A:
+ monitor is a high-level language constructs.  A monitor presents a set
+of programmer-defined operations that are provided mutual exclusion within
+the monitor.  The monitor type also contains the declaration of variables
+whose values define the state of an instance of htat type along with the
+bodies of procedures or functions that operate on those variables.  
+</p><p>
+    2.(Lanhui)What is a condition inside a monitor?
+</p><p>A: 
+Variable of type condition play a special role in monitors by virtue of special operations that can invoked on them: wait and signal. For example:
+<br>	condition x;
+<br>The operation
+<br>	x.wait;
+<br>means the thread invoking this operation is suspended until another thread invokes
+<br>	x.signal;
+<br>The x.signal operation resumes exactly one thread. If no thread is suspended, then the signal operation has no effect.
+
+</p><p>    3.(Tao)Jurassic Park consists of a dinosaur Museum and a park for safari riding. There are m passengers and n single passenger cars. Passengers wander around the musueum for a while, then line up to take a ride in a safari car. When a car is available
+, it loads the one passenger it can hold and rides around the park for a random amount of time. If the n cars are all out riding passengers around, then a passenger who wants to ride waits. Use semaphores to synchronize m passenger processes and n car pro
+cesses.
+
+</p><p>A: 
+semaphores me = 1, mutex = n;
+</p><pre>Process: take a car
+
+wait(me)
+wait(mutex)
+get a car;
+signal(me)
+
+
+Process: return a car
+
+return a car;
+signal(mutext);
+
+</pre>
+
+<p>    4.Do problems 7.10 (Tiffany) and 7.11(Lanhui).
+
+</p><p>7.10 The sleeping barber problem. A barbershop consists of a waiting room
+with n chairs, and a barber room with one barber chair.  If there are no
+customers to be served, the barber goes to sleep. If a customer enters the
+barbershop and all chairs are occupied, then the customer leaves the shop.
+If the barber is busy, but chairs are available, then the customer sits in
+one of the free chairs. If the barber is asleep, the customer wakes up the
+barber. Write a program to coordinate the barber and the customers using
+Java synchronization.
+
+</p><pre>solution found on internet
+
+import Utilities.*;        
+import Synchronization.*;
+
+class Barber extends MyObject implements Runnable {
+
+   private Salon salon = null;
+
+   public Barber(String name, Salon salon) {
+      super(name);
+      this.salon = salon;
+      new Thread(this).start();
+   }
+
+   public void run() {
+      while (true) {
+         salon.wantToCut();
+      }
+   }          
+}
+
+class Customer extends MyObject implements Runnable {
+
+   private int id = 0;
+   private Salon salon = null;
+   private int cutTime = 0;
+   private int growTime = 0;
+
+   public Customer(String name, int id, int cutTime,
+         int growTime, Salon salon) {
+      super(name + " " + id);
+      this.id = id;
+      this.salon = salon;
+      this.cutTime = cutTime;
+      this.growTime = growTime;
+      new Thread(this).start();      
+}
+
+   public void run() {
+      int napping;
+      while (true) {
+         napping = 1 + (int)random(growTime);
+         System.out.println("age=" + age()
+            + ", " + getName() + " growing hair " + napping + "ms");
+         nap(napping);
+         System.out.println("age=" + age()
+            + ", " + getName() + " needs a haircut");
+         salon.wantHairCut(id, cutTime);
+      }
+   }
+}               
+
+class Salon extends MyObject {
+
+   private int numChairs = 0;
+   private CountingSemaphore customers = null;
+   private CountingSemaphore barber = null;
+   private BinarySemaphore mutex = null;
+   private CountingSemaphore cutting = null;
+   private int waiting = 0;
+
+   public Salon(String name, int numChairs) {
+      super(name);
+      this.numChairs = numChairs;
+      customers = new CountingSemaphore(0);
+      barber = new CountingSemaphore(0);
+      mutex = new BinarySemaphore(1);
+      cutting = new CountingSemaphore(0);
+   }      
+   public void wantToCut() {
+      System.out.println("age=" + age()
+         + ", Barber free, waiting for a customer");
+      P(customers);
+      P(mutex);
+      waiting--;
+      V(barber);
+      System.out.println("age=" + age()
+         + ", Barber has customer, waiting=" + waiting);
+      V(mutex);
+      System.out.println("age=" + age()
+         + ", Barber cutting hair");
+      P(cutting);
+   }           
+    public void wantHairCut(int i, int cutTime) {
+      int napping;
+      P(mutex);
+      if (waiting &lt; numChairs) {
+         waiting++;
+         System.out.println("age=" + age()
+            + ", Customer " + i + " in room, waiting=" + waiting);
+         V(customers);
+         V(mutex);
+         P(barber);
+         napping = 1 + (int)random(cutTime);
+         System.out.println("age=" + age() + ", Customer "
+            + i + " getting haircut for " + napping + " ms");
+         nap(napping);
+         System.out.println("age=" + age()
+            + ", Customer " + i + " finished haircut");
+         V(cutting);
+      } else {
+         System.out.println("age=" + age() + ", Customer "  
+      + i + " room full, waiting=" + waiting);
+         V(mutex);
+      }
+   }
+}
+
+class SleepingBarber extends MyObject {
+
+   public static void main(String[] args) {
+
+      // parse command line options, if any, to override defaults
+      GetOpt go = new GetOpt(args, "Us:C:c:g:R:");
+      go.optErr = true;
+      String usage = "Usage: -s numChairs -C numCustomers"
+         + " -c cutTime -g growTime -R runTime";
+      int ch = -1;
+      int numChairs = 5;         
+      int numCustomers = 10;
+      int cutTime = 2;    // defaults
+      int growTime = 4;   // in
+      int runTime = 60;   // seconds
+      while ((ch = go.getopt()) != go.optEOF) {
+         if      ((char)ch == 'U') {
+            System.out.println(usage);  System.exit(0);
+         }
+         else if ((char)ch == 's') numChairs =
+            go.processArg(go.optArgGet(), numChairs);
+         else if ((char)ch == 'C') numCustomers =
+            go.processArg(go.optArgGet(), numCustomers);
+         else if ((char)ch == 'c') cutTime =
+            go.processArg(go.optArgGet(), cutTime);
+         else if ((char)ch == 'g') growTime =
+            go.processArg(go.optArgGet(), growTime);
+         else if ((char)ch == 'R')             
+            runTime = go.processArg(go.optArgGet(), runTime);
+         else {
+            System.err.println(usage);  System.exit(1);
+         }
+      }
+      System.out.println("SleepingBarber: numChairs=" + numChairs
+         + ", numCustomers=" + numCustomers + ", cutTime=" + cutTime
+         + ", growTime=" + growTime + ", runTime=" + runTime);
+
+      // create the Salon object
+      Salon salon = new Salon("Salon", numChairs);
+
+      new Barber("Barber", salon); // create the Barber
+
+      // create the Customers (self-starting thread)
+      for (int i = 0; i &lt; numCustomers; i++)
+         new Customer("Customer", i, cutTime*1000, growTime*1000, salon);    
+      System.out.println("All Customer threads started");
+
+      // let the Customers run for a while
+      nap(runTime*1000);
+      System.out.println("age()=" + age()
+         + ", time to stop the Customers and exit");
+      System.exit(0);
+   }
+}
+
+</pre>
+<p>           
+7.11(Lanhui) The Cigarette-Smoker Problem. Consider a system withe three smoker processes and one agent process. Each smoker continuously rolls a cigarette and then smokes it. But to roll and smoke a cigarette, the smoker needs three ingredients: tobacco,
+ paper, and matches. One of the smoker processes has paper, another has tobacoo, and third has matches. The agent has an infinite supply of all three materials. The agent places two of the ingredients on the table. The smoker who has the remaining ingredi
+ent then makes and smokes a cigarette, signaling the agent on completion. The agent then puts out another two of the three ingredients, and the cycle repeats. Write a program to synchronize the agent and the smokers using Java synchronization.
+</p><p>
+A: This problem can be solved in several ways. You can choose to use semaphore to monitor to solve the problem.
+Here is a sample solution for using Java Semaphore to solve the problem.
+</p><pre>// Here is the semaphore variable
+Object paper = new Object();
+Object tobacco = new Object();
+Object match = new Object();
+Object holdon = new Object();
+...
+
+// program of smoker who has the paper
+synchronized(paper, holdon) { 
+	while(true) {
+		try {
+			paper.wait();
+		}	
+		catch (InterruptedException e) {}
+	make digarette;
+	smoke;
+	holdon.notify();
+	}
+}
+
+// program of smoker who has the tobacco
+synchronized(tobacco, holdon) { 
+	while(true) {
+		try {
+			tobacco.wait();
+		}	
+		catch (InterruptedException e) {}
+	make digarette;
+	smoke;
+	holdon.notify();
+	}
+}
+
+// program of smoker who has the match
+synchronized(match, holdon) { 
+	while(true) {
+		try {
+			match.wait();
+		}	
+		catch (InterruptedException e) {}
+	make digarette;
+	smoke;
+	holdon.notify();
+	}
+}
+
+// program of the agent
+synchronized(paper, tobacco, match, holdon) {
+	while(1) {
+	choose two items to put on the table;
+	switch(items) {
+		case tobacco+match:
+			paper.notify();
+			break;
+		case paper+match:
+			tobacco.notify();
+			break;
+		case paper+tobacco:
+			match.notify();
+			break;
+		}
+	holdon.wait();
+	}
+}
+
+</pre>
+<p>    5.(Tao)The NoName restaurant does not take reservations. The dining room consists of a single table seating twenty patrons. When space becomes free, parties are seated in order they arrive, except that a party that cannot be seated in the available space is passed over.
+
+        What is the effect of this seating policy on large parties? If parties are seated strictly in the order in which they arrive, how will this affect the utilization of the table?
+
+        Give a semaphore and monitor solution for the second case.
+        
+</p><p>
+A: in the order they arrive: If they are passed over, the large parties might have to wait for a longer time. If they are strictly served in the order they
+arrive, then there will be poorer utilization of the table.
+</p><p>
+
+</p><h1>Work Sheet 8 </h1>
+
+<p>   1.(Tiffany)List some of the resources one might consider in deadlock problems on computers - sharable and nonsharable
+</p><p>A:
+memory space, CPU cycles, files, object locks and I/O devices.  
+
+</p><p>   2.(Lanhui)Define dead-lock and what are the four conditions that a deadlock can occur.
+</p><p>A: Deadlock is a set of processes each holding a resource and waiting  to acquire a resource held by another process in the set.
+</p><p>(1) Mutual Exclusion.
+<br>(2) Hold and Wait.
+<br>(3) No preemption.
+<br>(4) Circular Wait.
+
+</p><p>   3.(Tao)List three strategies for handling deadlocks.
+   
+</p><p>   A: 1.Deadlock prevention
+<br>      2. Deadlock avoidance
+<br>      3. Ignore the deadlock
+      
+</p><p>   
+   4.(Tiffany)List three issues that must be considered for pre-emption.
+</p><p>A:
+<br>1. selection of a victim: determine which resources and which processes
+are to be preempted.
+<br>2. Rollback: If a resource is preempted from a process, the process need
+to be rolled back to some safe state and restart from that state.
+<br>3. Starvation: Need to make sure that a starvation situation won't
+occur, ensure that a process can be picked as a victim only a finite
+number of times.  
+</p><p>
+   5.Do problems 8.1(Lanhui), 8.2(Tao), 8.3(Tiffany), 8.5(Lanhui) and 8.11(Tao) of SG&amp;G.
+</p><p>
+8.1 (Lanhui) List three examples of deadlocks that are not related to a computer-system environment.
+</p><p>A: 
+<br>(1) Traffic deadlock as the figure in page 249 in the textbook.
+<br>(2) When people lock their key in their room.
+<br>(3) Two people (A and B) want to see the TV. A got the remote controler. B got the TV.  Both of them want to watch TV. A has to wait for B to give up TV. B has to wait for A give up the remote controller.
+
+</p><p>8.2 Is it possible to have a deadlock involving only one single process? Explain your answer.
+</p><p>A: No. There is no dead-lock because there is only one process and hence no
+condition about Mutual Exclusion.
+</p><p>
+8.3 Consider the traffic deadlock depicted in figure 8.11
+a. Show that the four necessary conditions for deadlock indeed hold in
+this example
+</p><p>
+A:
+Mutual exclusion:  the street is occupied by a car in a nonsharable
+mode.
+<br>Hold and wait: a car is holding a section of the street and wait to
+move to the next section
+<br>No preemption: a section of the street cannot be taken away unless the
+car moves voluntarily.
+Circular wait: each vehicle is waiting for next vehicle in front of it
+to move.
+</p><p>
+b. State a simple rule that will avoid deadlocks in this system.
+</p><p>A:Cross intersection only if it is assumed that vehicle will not stop at
+the intersection. 
+</p><p>
+8.5 (Lanhui) A possible solution for preventing deadlocks is to have a single, higher-order resource that must be requested before any other resource. For example, if multiple threads attempt to access the locks for five Java objects A ... E, deadlock is 
+possible. We can prevent the deadlock by adding a sixth object F. Thenever a thread wants to require the lock for any object A ... E, it must first acquire the lock for object F. This solution is known as containment: the locks for objects A ... E are con
+tained within the lock for object F. Compare this scheme with the circular-wait scheme of section 8.4.4.
+</p><p>A: Both algorithm will prevent the deadlock. But the Circular-Wait algorithm will be more efficient than Containment algorithm. Since Circular-Wait allow multiple processes to use those resources as long as there is no deadlock. But Containment only allow
+ one processes to use those resources at one time.
+For the implementation, the Containment will be much easier to implement than the Circular-Waiting. For some process which can not predict how many resources it will used, to implement Circular-Waiting algorithm will be even harder.
+
+</p><p>8.11 
+Answer:
+<br>1) There is no dead-lock as there are no Hold and Wait and pre-emption 
+conditions.
+<br>
+2) Yes, There can be indefinite blocking as there is no provision in the
+protocol to prvent one process from starving the other.
+
+
+
+</p><div id="feedly-mini" title="feedly Mini tookit"></div><span id="buffer-extension-hover-button" style="display: none;position: absolute;z-index: 8675309;width: 100px;height: 25px;background-image: url(chrome-extension://noojglkidnpfjbincgijbaiedldjfbhh/data/shared/img/buffer-hover-icon@1x.png);background-size: 100px 25px;opacity: 0.9;cursor: pointer;"></span></body></html>

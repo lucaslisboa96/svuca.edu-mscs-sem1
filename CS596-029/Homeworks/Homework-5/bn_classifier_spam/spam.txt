@@ -1,0 +1,1 @@
+{"lang": "english", "__module__": "bow", "stemming": 0, "_bow": {"vocation": 1, "great": 1, "hurry": 2, "congratulation": 1, "free": 1, "experience": 1, "reward": 1}, "numdocs": 2, "__class__": "DefaultDocument"}

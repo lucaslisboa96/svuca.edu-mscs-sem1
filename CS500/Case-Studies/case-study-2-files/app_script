@@ -1,0 +1,11 @@
+#!/bin/bash
+maxcount="$1"
+count=0
+mem=`expr $maxcount \* 10`
+echo "Script Start Require $mem Mbytes"
+while [ "$count" -lt "$maxcount" ]
+do
+count=`expr $count + 1`
+./app $count &
+done
+echo "Script Started $maxcount Processes Using $mem Mbytes"

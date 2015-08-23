@@ -1,0 +1,65 @@
+Sean Fisk
+CS452 Operating Systems
+Homework 2
+2011-02-14
+
+3.6	Describe the differences among short-term, medium-term, and long-term shceduling.
+
+The short-term scheduler manages the transition of processes from RAM to the CPU. The medium-term scheduler manages the transition of processes from RAM to swap space (usually on the hard disk). The long-term scheduler manages the starting of new processes.
+
+3.10	Using the program in 3.29, identify the vlaues of pid at lines A, B, C, and D. (Assume that the actual pids of the parent and child are 2600 and 2603, respectively.)
+
+A: 0
+B: 2603
+C: 2603
+D: 2600
+
+4.7	Provide two programming examples in which multithreading does not provide better performance than a single-threaded solution.
+
+1) A program which simply waits for input from the user. An example is a basic text editor, which would simply wait for the user to type:
+
+Here is an example program:
+
+#!/bin/bash
+cat > $1
+
+This program could not be improved by multithreading.
+
+1) A program in which every step in execution depends on the previous step. An example would be a recursive function, for example the factorial function:
+
+#include <stdio.h>
+int factorial(int i) {
+    return i > 1 ? i * factorial(i - 1) : i;
+}
+int main(int argc, char *argv[]) {
+    if(argc != 2) return 1;
+    int num = atoi(argv[1]);
+    if(num < 0) return 1;
+    printf("!%d = %d\n", num, factorial(num));
+	return 0;
+}
+
+4.10	Which of the following components of program state are shared across threads in a multithreaded process?
+
+No		Register values
+Yes		Heap memory
+Yes		Global variables
+No		Stack memory
+
+4.11	Can a multithreaded solution using multiple user-level threads achieve better performance on a multiprocessor system than on a single-processor system? Explain.
+
+No. The kernel is not aware of the user-level threads that are created. Therefore, it is not able to run the user-level threads on different processors.
+
+4.14	Consider a mutliprocessor system and a multithreaded program written using the many-to-many threading model. Let the number of user-level threads in the program be more than the number of processors in the system. Discuss the performace implications of the following scenarios.
+
+a.	The number of kernel threads allocated to the program is less than the number of processors.
+
+Each kernel thread can run on a processor, but each user thread will need to be context-switched between kernel threads. Not all processors will be used. However, if a kernel thread goes into a blocked state, its processor can no longer do any useful work.
+
+b.	The number of kernel threads allocated to the program is equal to the number of processors.
+
+Each kernel thread can run on a processor, and each user thread will need to be context-switched between kernel threads. However, less context switching of user threads than (a) will be necessary since there are more kernel threads. All processors will be used. However, if a kernel thread goes into a blocked state, its processor can no longer do any useful work.
+
+c.	The number of kernel threads allocated to the program is greater than the number of processors but less than the number of user-level threads.
+
+The processor will need to context-switch kernel threads and each kernel thread will need to context-switch user threads. Without interrupts, this option is slower than (b). However, if a kernel thread is blocked, another kernel thread can be switched in to perform useful work on the processor. All processors will be used as long as there are ready kernels threads for them.
